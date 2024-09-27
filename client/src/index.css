@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.gradient-bg{
+    background-image: linear-gradient(to right, #34d399 0%, #09f774 100%) ;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.bg-grade{
+    background-image: linear-gradient(to right, #34d399 0%, #09f774 100%) ;
+}
+.shadow-bg{
+    filter: drop-shadow(0 0 5px #09f774 );
+}
+
