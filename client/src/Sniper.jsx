@@ -14,7 +14,7 @@ const provider = new ethers.providers.JsonRpcProvider("https://mainnet.infura.io
 
 const Sniper = () => {
 
-  const { genratsWallets, autoFundingToSubWallet ,genrateMainWallet, transferToken, sellToken, deleteAccount, address, getWalletsByUserId, setAddress, enableTradingAndBuyToken, state } = useContext(AppContext);
+  const { genratsWallets, enableTradingAndSellToken , autoFundingToSubWallet, genrateMainWallet, transferToken, sellToken, deleteAccount, address, getWalletsByUserId, setAddress, enableTradingAndBuyToken, state } = useContext(AppContext);
   const items = [{ text: 1 }, { text: 2 }, { text: 3 }, { text: 4 }];
   const [shouldFetch, setShouldFetch] = useState(false);
   const [showicon, setshowicon] = useState();
@@ -72,6 +72,7 @@ const Sniper = () => {
 
 
   const [tokenAmounts, setTokenAmounts] = useState({});
+  const [sellTokenAmounts, setSellTokenAmounts] = useState({});
   const [balances, setBalances] = useState({});
 
 
@@ -152,7 +153,7 @@ const Sniper = () => {
   const autoFundingToSubWallets = async () => {
     try {
       const result = await autoFundingToSubWallet();
-    
+
     } catch (error) {
       console.error("Error generating wallets:", error);
     } finally {
@@ -173,14 +174,24 @@ const Sniper = () => {
     }
   }
 
-  // Function to handle token amount change
+  // Function to handle Eth amount change
   const handleTokenAmountChange = (e, index) => {
     const newAmount = e.target.value;
     setTokenAmounts({
       ...tokenAmounts,
       [index]: newAmount,
     });
+  }
+
+  // Function to handle token amount change
+  const handleSellTokenAmountChange = (e, index) => {
+    const newAmount = e.target.value;
+    setSellTokenAmounts({
+      ...sellTokenAmounts,
+      [index]: newAmount,
+    });
   };
+  console.log(sellTokenAmounts)
 
   // Function to get corresponding wallet address and private key
   const getCorrespondingData = (index) => {
@@ -216,6 +227,49 @@ const Sniper = () => {
       // Send combined data to the backend
       setLoader1("flex")
       const result = await enableTradingAndBuyToken(combinedData);
+
+      // Update state with the transaction hash or relevant information
+      setLoader1("none")
+      alert("Sucussfully Bundle Transactions is completed");
+
+      setTexHash(result.message);
+      setShowTexHash(true); // Show texHash
+
+      setTimeout(() => {
+        setShowTexHash(false); // Hide after 1 minute
+      }, 60000);
+
+    } catch (error) {
+      setLoader1("none")
+
+      console.error('Error submitting form:', error);
+    }
+  };
+
+  const handleSellTrading = async (event) => {
+    event.preventDefault();
+
+    try {
+      // Collect data for all indices where tokenAmounts have values
+      const correspondingDataArray = Object.keys(sellTokenAmounts).map(index => {
+        const data = getCorrespondingData(Number(index)); // Ensure index is a number
+        return data ? {
+          ...data,
+          tokenAmount: sellTokenAmounts[index], // Include the token amount
+        } : null;
+      }).filter(data => data !== null); // Remove null entries
+
+      // Combine formData with the array of corresponding data
+      const combinedData = {
+        ...formData,
+        correspondingData: correspondingDataArray, // Add the array to formData
+      };
+
+      // console.log(combinedData); // Debugging output
+     console.log(combinedData);
+      // Send combined data to the backend
+      setLoader1("flex")
+      const result = await enableTradingAndSellToken(combinedData);
 
       // Update state with the transaction hash or relevant information
       setLoader1("none")
@@ -479,35 +533,73 @@ const Sniper = () => {
           </div>
         </div>
         <div className="pt-8">
-  {!state?.mainWallet && (
-    <h1 className="main-wallet-h1 text-white md:text-[18px] text-[14px]">
-      Create Main Wallet:
-    </h1>
-  )}
+          {!state?.mainWallet && (
+            <h1 className="main-wallet-h1 text-white md:text-[18px] text-[14px]">
+              Create Main Wallet:
+            </h1>
+          )}
 
-  {state?.mainWallet ? (
-    <>
-      <h1 className="main-wallet-h1">MainWallet</h1>
-      <h2 className="main-wallet-h2">{state?.mainWallet?.walletAddress}</h2>
-      <button className="group/button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
-      onClick={autoFundingToSubWallet}>
-        <span className="md:text-[18px] text-[14px]">AutoFunding To SubWallet</span>
-      </button>
-    </>
-  ) : (
-    <div className="flex justify-center flex-wrap items-center pt-4 gap-4" onClick={genrateMainWallet}>
-      <button className="group/button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20">
-        <span className="md:text-[18px] text-[14px]">Create Main Wallet</span>
-      </button>
-    </div>
-  )}
+          {state?.mainWallet ? (
+            <>
+              <div className="flex mt-5 relative gap-4 flex-col justify-between w-full px-4 py-4 border-2 border-[#09f774]" >
+                <div className="flex justify-between items-center">
+                  <h1 className="flex flex-col md:flex-row justify-start items-start text-[8px] md:text-[18px]">
+                    <span className="text-[#09f774]">Main Wallet address:</span>
+                    {state?.mainWallet?.walletAddress}
+                  </h1>
 
-  <div className="flex justify-center mt-4 items-center" style={{ display: showloader }}>
-    <div className="w-20 aspect-square rounded-full relative flex justify-center items-center animate-[spin_3s_linear_infinite] z-40 bg-[conic-gradient(white_0deg,white_300deg,transparent_270deg,transparent_360deg)] before:animate-[spin_2s_linear_infinite] before:absolute before:w-[60%] before:aspect-square before:rounded-full before:z-[80] before:bg-[conic-gradient(white_0deg,white_270deg,transparent_180deg,transparent_360deg)] after:absolute after:w-3/4 after:aspect-square after:rounded-full after:z-[60] after:animate-[spin_3s_linear_infinite] after:bg-[conic-gradient(#065f46_0deg,#065f46_180deg,transparent_180deg,transparent_360deg)]">
-      <span className="absolute w-[85%] aspect-square rounded-full z-[60] animate-[spin_5s_linear_infinite] bg-[conic-gradient(#34d399_0deg,#34d399_180deg,transparent_180deg,transparent_360deg)]"></span>
-    </div>
-  </div>
-</div>
+                </div>
+
+                <h1 className="flex flex-col md:flex-row justify-start items-start text-[12px] md:text-[18px]">
+                  <span className="text-[#09f774]">Main Wallet Balance:</span>
+                  {balances[state?.mainWallet?.walletAddress] !== undefined ? `${balances[state?.mainWallet?.walletAddress]} ETH` : "Loading..."}
+                </h1>
+
+                <h1 className="flex flex-col text-wrap md:flex-row justify-start items-start text-[6px] md:text-[18px]">
+                  <span className="text-[#09f774]">Key:</span>
+                  {state?.mainWallet?.privateKey}
+                </h1>
+
+          
+
+
+                <div className="justify-end flex-col md:flex-row flex gap-2">
+                  <button onClick={() => transferPopUp(e.privateKey, e.tokenAddress)} type="button" className="bg-transparent border-2 border-[#34d399] text-center w-48 rounded-lg h-14 relative font-sans text-white text-xl font-semibold group">
+                    <div className="bg-[#34d399] rounded-lg h-11 w-1/4 flex items-center justify-center absolute left-1 top-[4px] group-hover:w-[170px] z-10 duration-500">
+                      <NearMeRoundedIcon className="text-[white]" />
+                    </div>
+                    <p className="translate-x-2">Transfer</p>
+                  </button>
+
+                  <button onClick={() => sellPopUp(e.privateKey)} type="button" className="bg-transparent border-2 border-[#34d399] text-center w-48 rounded-lg h-14 relative font-sans text-white text-xl font-semibold group">
+                    <div className="bg-[#34d399] rounded-lg h-11 w-1/4 flex items-center justify-center absolute left-1 top-[4px] group-hover:w-[170px] z-10 duration-500">
+                      <NearMeRoundedIcon className="text-[white]" />
+                    </div>
+                    <p className="translate-x-2">Sell</p>
+                  </button>
+
+                </div>
+                <button className="group/button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
+                  onClick={autoFundingToSubWallet}>
+                  <span className="md:text-[18px] text-[14px]">AutoFunding To SubWallet</span>
+                </button>
+              </div>
+
+            </>
+          ) : (
+            <div className="flex justify-center flex-wrap items-center pt-4 gap-4" onClick={genrateMainWallet}>
+              <button className="group/button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20">
+                <span className="md:text-[18px] text-[14px]">Create Main Wallet</span>
+              </button>
+            </div>
+          )}
+
+          <div className="flex justify-center mt-4 items-center" style={{ display: showloader }}>
+            <div className="w-20 aspect-square rounded-full relative flex justify-center items-center animate-[spin_3s_linear_infinite] z-40 bg-[conic-gradient(white_0deg,white_300deg,transparent_270deg,transparent_360deg)] before:animate-[spin_2s_linear_infinite] before:absolute before:w-[60%] before:aspect-square before:rounded-full before:z-[80] before:bg-[conic-gradient(white_0deg,white_270deg,transparent_180deg,transparent_360deg)] after:absolute after:w-3/4 after:aspect-square after:rounded-full after:z-[60] after:animate-[spin_3s_linear_infinite] after:bg-[conic-gradient(#065f46_0deg,#065f46_180deg,transparent_180deg,transparent_360deg)]">
+              <span className="absolute w-[85%] aspect-square rounded-full z-[60] animate-[spin_5s_linear_infinite] bg-[conic-gradient(#34d399_0deg,#34d399_180deg,transparent_180deg,transparent_360deg)]"></span>
+            </div>
+          </div>
+        </div>
 
         <div className="pt-8">
           <h1 className="text-white  md:text-[18px] text-[14px]">Bundle:</h1>
@@ -597,6 +689,19 @@ const Sniper = () => {
                     />
                   </span>
                 </h1>
+                <h1 className="flex flex-col md:flex-row gap-2 text-[#09f774] text-[14px] md:text-[18px] md:items-center items-start justify-start w-full">
+                  Token amount:
+                  <span>
+                    <Input
+                      placeholder="Token amount"
+                      labelProps={{ className: "hidden" }}
+                      className="!border-2 !border-[#34d399] !w-[200px] shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 placeholder:opacity-100 focus:!border-[#34d399] focus:!border-t-[#34d399] focus:ring-gray-900/10 rounded-lg bg-gray-600/30 text-white"
+                      label="Token amount"
+                      value={sellTokenAmounts[i] || ''}
+                      onChange={(event) => handleSellTokenAmountChange(event, i)}
+                    />
+                  </span>
+                </h1>
 
                 <div className="justify-end flex-col md:flex-row flex gap-2">
                   <button onClick={() => transferPopUp(e.privateKey, e.tokenAddress)} type="button" className="bg-transparent border-2 border-[#34d399] text-center w-48 rounded-lg h-14 relative font-sans text-white text-xl font-semibold group">
@@ -682,6 +787,30 @@ const Sniper = () => {
         <button className="group/button relative w-full    mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
           onClick={handleTrading}>
           <span className="md:text-[18px] text-[14px]   " >Enable Trading</span>
+          <div className="absolute inset-0 flex  h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
+            <div className="relative h-full w-10 bg-white/30"></div>
+          </div>
+        </button>
+        <button className="group/button relative w-full    mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
+          onClick={handleSellTrading}
+          >
+          <span className="md:text-[18px] text-[14px]   " >Sell Fron All Sub Wallets</span>
+          <div className="absolute inset-0 flex  h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
+            <div className="relative h-full w-10 bg-white/30"></div>
+          </div>
+        </button>
+        <button className="group/button relative w-full    mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
+          // onClick={handleSellTrading}
+          >
+          <span className="md:text-[18px] text-[14px]   " >Click For  Tokens Transfer To Main Wallet</span>
+          <div className="absolute inset-0 flex  h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
+            <div className="relative h-full w-10 bg-white/30"></div>
+          </div>
+        </button>
+        <button className="group/button relative w-full    mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
+          // onClick={handleSellTrading}
+          >
+          <span className="md:text-[18px] text-[14px]   " >Click For  ETHs Transfer To Main Wallet</span>
           <div className="absolute inset-0 flex  h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
             <div className="relative h-full w-10 bg-white/30"></div>
           </div>

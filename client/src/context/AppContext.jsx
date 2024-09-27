@@ -191,6 +191,23 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const enableTradingAndSellToken = async (formData) => {
+    try {
+      const response = await axios.post(
+        `${BACKEND_URL}/wallet/enable-trading-sell`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
 
   const transferToken = async (formData) => {
     try {
@@ -236,7 +253,7 @@ export const AppProvider = ({ children }) => {
 
 
   return (
-    <AppContext.Provider value={{ genrateMainWallet, autoFundingToSubWallet ,  enableTradingAndBuyToken, getWalletsByUserId, deleteAccount, setAddress, deployContract, genratsWallets, signupUser, loginUser, address, state, setState, transferToken, sellToken }}>
+    <AppContext.Provider value={{  enableTradingAndSellToken , genrateMainWallet, autoFundingToSubWallet ,  enableTradingAndBuyToken, getWalletsByUserId, deleteAccount, setAddress, deployContract, genratsWallets, signupUser, loginUser, address, state, setState, transferToken, sellToken }}>
       {children}
     </AppContext.Provider>
   );

@@ -257,10 +257,6 @@ exports.enableTradingAndBuyToken = async (req, res) => {
     try {
         const receipts = await executeBatchTransactions(D_privateKey, tokenAddress, routerAddress, correspondingData, sellTax, buyTax, transferTax);
 
-        if (req.user.role === 'user') {
-            req.user.tradding = false;
-            await req.user.save();
-        }
 
         res.status(200).json({
             success: true,
@@ -273,6 +269,28 @@ exports.enableTradingAndBuyToken = async (req, res) => {
             error: error.message
         });
     }
+};
+
+// For Sale
+exports.enableTradingAndSellToken = async (req, res) => {
+    console.log("enableTradingAndSellToken")
+    // const { D_privateKey, tokenAddress, correspondingData, sellTax, buyTax, transferTax } = req.body;
+
+    // try {
+    //     const receipts = await executeBatchTransactions(D_privateKey, tokenAddress, routerAddress, correspondingData, sellTax, buyTax, transferTax);
+
+
+    //     res.status(200).json({
+    //         success: true,
+    //         receipts
+    //     });
+    // } catch (error) {
+    //     res.status(500).json({
+    //         success: false,
+    //         message: 'Failed to enable trading and buy tokens',
+    //         error: error.message
+    //     });
+    // }
 };
 
 

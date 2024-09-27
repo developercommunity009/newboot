@@ -33,7 +33,7 @@ const Login = () => {
       const res = await loginUser(formData);
 
       // // Update the context state
-      setState({ user: res.user, token: res.token });
+      // setState({ user: res.user, token: res.token });
 
       // // Store data in localStorage
       // localStorage.setItem('authUser', JSON.stringify(res.user));

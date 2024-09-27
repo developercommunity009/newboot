@@ -1,6 +1,33 @@
 // controllers/authController.js
+require('dotenv').config();
 const User = require('../model/UserModel');
 const jwt = require('jsonwebtoken');
+const secretKey = process.env.ENCRYPTION_KEY
+const crypto = require('crypto');
+const algorithm = 'aes-256-cbc';
+
+
+// Function to decrypt data
+function decrypt(text) {
+    try {
+        const textParts = text.split(':');
+        if (textParts.length !== 2) {
+            throw new Error('Invalid encrypted text format');
+        }
+
+        const iv = Buffer.from(textParts[0], 'hex'); // Extract IV
+        const encryptedText = Buffer.from(textParts[1], 'hex'); // Extract the encrypted text
+
+        const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey, 'hex'), iv);
+        let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+
+        return decrypted;
+    } catch (error) {
+        console.error('Decryption error:', error.message);
+        throw new Error('Failed to decrypt the text');
+    }
+}
 
 // Middleware to protect routes
 exports.protect = async (req, res, next) => {
@@ -85,23 +112,36 @@ exports.login = async (req, res) => {
 };
 
 exports.getMe = async (req, res) => {
-    
-    // Assuming the user ID is passed as a parameter or from the request object
-    const  id  = req.user._id; // Access the authenticated user's ID from the request object
+    // Assuming the user ID is passed from req.user._id (after authentication)
+    const id = req.user._id;
+
     try {
-      // Find the user by ID and populate the 'mainWallet' field
-      const user = await User.findById(id).populate('mainWallet'); // Assuming 'mainWallet' is the field you want to populate
-  
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Optionally exclude sensitive fields (e.g., password) from the response
-      const { password, ...userData } = user.toObject();
-  
-      res.status(200).json(userData);
+        // Step 1: Find the user by ID and populate the 'mainWallet'
+        const user = await User.findById(id).populate('mainWallet');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Step 2: Check if the user has a mainWallet and decrypt the privateKey
+        if (user.mainWallet && user.mainWallet.privateKey) {
+            try {
+                const decryptedPrivateKey = decrypt(user.mainWallet.privateKey);
+                // Step 3: Attach decryptedPrivateKey to the response object
+                user.mainWallet.privateKey = decryptedPrivateKey;
+            } catch (error) {
+                return res.status(500).json({ message: 'Error decrypting private key', error: error.message });
+            }
+        }
+
+        // Step 4: Exclude the password and any other sensitive fields from the user data
+        const { password, ...userData } = user.toObject();
+
+        // Step 5: Send the user data with the decrypted main wallet's private key
+        res.status(200).json(userData);
     } catch (error) {
-      res.status(500).json({ message: 'Error retrieving user', error: error.message });
+        res.status(500).json({ message: 'Error retrieving user', error: error.message });
     }
-  };
+};
+
   
