@@ -14,6 +14,7 @@ const provider = new ethers.providers.JsonRpcProvider("https://mainnet.infura.io
 
 const Sniper = () => {
 
+  
   const { genratsWallets, setGetME , transferTokenToMain ,transferEthToMain, sellTokenFromSubWallets, autoFundingToSubWallet, genrateMainWallet, transferToken, sellToken, deleteAccount, address, getWalletsByUserId, setAddress, enableTradingAndBuyToken, state } = useContext(AppContext);
   const items = [{ text: 1 }, { text: 2 }, { text: 3 }, { text: 4 }];
   const [shouldFetch, setShouldFetch] = useState(false);
@@ -94,7 +95,26 @@ const Sniper = () => {
   const [sellTokenAmounts, setSellTokenAmounts] = useState({});
   const [balances, setBalances] = useState({});
 
+  const TRADING = 'Enable Trading';
+  const SELL = 'Sell From Sub Wallets';
+  const TRANSFER = 'Tokens Transfer To Main Wallet';
+  const TRANSFER_ETH = 'ETHs Transfer To Main Wallet';
 
+  // State to track the selected option and dropdown visibility
+  const [selectedOption, setSelectedOption] = useState("Actions"); // Default to 'Enable Trading'
+  const [dropdownOpen, setDropdownOpen] = useState(false); // Control dropdown visibility
+
+  // Handler for selecting options
+  const handleSelectOption = (option) => {
+    setSelectedOption(option);
+    setDropdownOpen(false);
+    // Close the dropdown after selecting
+  };
+
+  // Toggle the dropdown visibility
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -687,7 +707,18 @@ const Sniper = () => {
             )}
           </div>
         </div> */}
+        <div className="flex-col w-full mt-2  flex justify-start gap-2 items-start ">
+              <h1 className="text-white text-[14px] md:text-[18px]">Token Address</h1>
+              <Input
+                name="tokenAddress"
+                
+                color="teal"
+                className="rounded-lg bg-gray-600/30 text-white"
+                label="Token Address"
+              />
+            </div>
         <div className="pt-8">
+        
           {!state?.mainWallet && (
             <h1 className="main-wallet-h1 text-white md:text-[18px] text-[14px]">
               Create Main Wallet:
@@ -742,7 +773,7 @@ const Sniper = () => {
 
             </>
           ) : (
-            <div className="flex justify-center flex-wrap items-center pt-4 gap-4" onClick={createMainWallet}>
+            <div className="flex justify-start ml-10 flex-wrap items-start  gap-4" onClick={createMainWallet}>
               <button className="group/button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20">
                 <span className="md:text-[18px] text-[14px]">Create Main Wallet</span>
               </button>
@@ -939,38 +970,68 @@ const Sniper = () => {
         </div> */}
 
 
-        <button className="group/button relative w-full    mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
-          onClick={handleTrading}>
-          <span className="md:text-[18px] text-[14px]   " >Enable Trading</span>
-          <div className="absolute inset-0 flex  h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
-            <div className="relative h-full w-10 bg-white/30"></div>
-          </div>
-        </button>
-        <button className="group/button relative w-full    mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
+        <div className="relative mt-4">
+      <button
+        onClick={toggleDropdown} // Toggle dropdown on button click
+        className="group/button relative w-full inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
+      >
+        <span className="md:text-[18px] text-[14px]">{selectedOption}</span>
+        <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
+          <div className="relative h-full w-10 bg-white/30"></div>
+        </div>
+      </button>
 
-          onClick={() => sellPopUp()}
-        >
-          <span className="md:text-[18px] text-[14px]   " >Sell From Sub Wallets</span>
-          <div className="absolute inset-0 flex  h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
-            <div className="relative h-full w-10 bg-white/30"></div>
-          </div>
-        </button>
-        <button className="group/button relative w-full    mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
-          onClick={() => setShowTransferPopup(true)}
-        >
-          <span className="md:text-[18px] text-[14px]   " >Click For  Tokens Transfer To Main Wallet</span>
-          <div className="absolute inset-0 flex  h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
-            <div className="relative h-full w-10 bg-white/30"></div>
-          </div>
-        </button>
-        <button className="group/button relative w-full    mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
-          onClick={transferETHEToMain}
-        >
-          <span className="md:text-[18px] text-[14px]   " >Click For  ETHs Transfer To Main Wallet</span>
-          <div className="absolute inset-0 flex  h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
-            <div className="relative h-full w-10 bg-white/30"></div>
-          </div>
-        </button>
+      {/* Dropdown Options */}
+      {dropdownOpen && ( // Show dropdown only when dropdownOpen is true
+        <div className="relative left-0 mt-2 w-full rounded-md shadow-lg bg-white z-10">
+          <ul className="py-1">
+            <li>
+              <button
+                                onClick={
+                  () => { handleSelectOption(TRADING) ;
+                  handleTrading()
+
+                  }}
+                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200"
+              >
+                Enable Trading
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={
+                  () => { handleSelectOption(SELL) ;
+                  sellPopUp()
+
+                  }
+
+
+                  }
+                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200"
+              >
+                Sell From Sub Wallets
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => {handleSelectOption(TRANSFER);setShowTransferPopup(true)}}
+                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200"
+              >
+                Tokens Transfer To Main Wallet
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => {handleSelectOption(TRANSFER_ETH); transferETHEToMain()}}
+                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200"
+              >
+                ETHs Transfer To Main Wallet
+              </button>
+            </li>
+          </ul>
+        </div>
+      )}
+    </div>
       </div>
 
     </div>
