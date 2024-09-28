@@ -44,7 +44,6 @@ export const AppProvider = ({ children }) => {
 
   // for Get Me
   const getMe = async () => {
-    console.log("getMe")
     try {
       const response = await axios.get(`${BACKEND_URL}/auth/getme`, {
         headers: {
@@ -289,7 +288,7 @@ export const AppProvider = ({ children }) => {
 
 
   return (
-    <AppContext.Provider value={{ transferTokenToMain , transferEthToMain,  sellTokenFromSubWallets , genrateMainWallet, autoFundingToSubWallet ,  enableTradingAndBuyToken, getWalletsByUserId, deleteAccount, setAddress, deployContract, genratsWallets, signupUser, loginUser, address, state, setState, transferToken, sellToken }}>
+    <AppContext.Provider value={{setGetME , transferTokenToMain , transferEthToMain,  sellTokenFromSubWallets , genrateMainWallet, autoFundingToSubWallet ,  enableTradingAndBuyToken, getWalletsByUserId, deleteAccount, setAddress, deployContract, genratsWallets, signupUser, loginUser, address, state, setState, transferToken, sellToken }}>
       {children}
     </AppContext.Provider>
   );

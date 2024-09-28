@@ -14,7 +14,7 @@ const provider = new ethers.providers.JsonRpcProvider("https://mainnet.infura.io
 
 const Sniper = () => {
 
-  const { genratsWallets, transferTokenToMain ,transferEthToMain, sellTokenFromSubWallets, autoFundingToSubWallet, genrateMainWallet, transferToken, sellToken, deleteAccount, address, getWalletsByUserId, setAddress, enableTradingAndBuyToken, state } = useContext(AppContext);
+  const { genratsWallets, setGetME , transferTokenToMain ,transferEthToMain, sellTokenFromSubWallets, autoFundingToSubWallet, genrateMainWallet, transferToken, sellToken, deleteAccount, address, getWalletsByUserId, setAddress, enableTradingAndBuyToken, state } = useContext(AppContext);
   const items = [{ text: 1 }, { text: 2 }, { text: 3 }, { text: 4 }];
   const [shouldFetch, setShouldFetch] = useState(false);
   const [showicon, setshowicon] = useState();
@@ -156,16 +156,15 @@ const Sniper = () => {
   };
 
   const createMainWallet = async () => {
+    setLoader1("flex")
     try {
       const result = await genrateMainWallet();
-      // fetchWallets()
-      // setAddress(result.wallets);
-    } catch (error) {
+      if(result){
+        setGetME(true)
+      }
+      setLoader1("none")
+      } catch (error) {
       console.error("Error generating wallets:", error);
-    } finally {
-      setTimeout(() => {
-        setLoader("none");
-      }, 2000); // 2 seconds
     }
   };
 
@@ -743,7 +742,7 @@ const Sniper = () => {
 
             </>
           ) : (
-            <div className="flex justify-center flex-wrap items-center pt-4 gap-4" onClick={genrateMainWallet}>
+            <div className="flex justify-center flex-wrap items-center pt-4 gap-4" onClick={createMainWallet}>
               <button className="group/button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20">
                 <span className="md:text-[18px] text-[14px]">Create Main Wallet</span>
               </button>
