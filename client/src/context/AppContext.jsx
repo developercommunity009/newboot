@@ -137,10 +137,12 @@ export const AppProvider = ({ children }) => {
   }
 
   // for  Auto Fundin To SubWallets
-  const autoFundingToSubWallet = async () => {
+  const autoFundingToSubWallet = async (mainWalletData) => {
+    const {wallet , privateKey}=mainWalletData;
+    // console.log(wallet , privateKey);
     try {
       const response = await axios.post(
-        `${BACKEND_URL}/wallet/autofunding-to-subwallet`, "",
+        `${BACKEND_URL}/wallet/autofunding-to-subwallet`, {wallet , privateKey},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -191,7 +193,8 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const enableTradingAndSellToken = async (formData) => {
+  const sellTokenFromSubWallets = async (formData) => {
+    console.log(formData)
     try {
       const response = await axios.post(
         `${BACKEND_URL}/wallet/enable-trading-sell`,
@@ -214,6 +217,39 @@ export const AppProvider = ({ children }) => {
       const response = await axios.post(
         `${BACKEND_URL}/wallet/transfer-token`,
         formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+  
+  const transferEthToMain = async () => {
+    try {
+      const response = await axios.post(
+        `${BACKEND_URL}/wallet/transfer-eth-main`,
+        "",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+  const transferTokenToMain = async (tokenAddress) => {
+    try {
+      const response = await axios.post(
+        `${BACKEND_URL}/wallet/transfer-token-main`,
+        {tokenAddress},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -253,7 +289,7 @@ export const AppProvider = ({ children }) => {
 
 
   return (
-    <AppContext.Provider value={{  enableTradingAndSellToken , genrateMainWallet, autoFundingToSubWallet ,  enableTradingAndBuyToken, getWalletsByUserId, deleteAccount, setAddress, deployContract, genratsWallets, signupUser, loginUser, address, state, setState, transferToken, sellToken }}>
+    <AppContext.Provider value={{ transferTokenToMain , transferEthToMain,  sellTokenFromSubWallets , genrateMainWallet, autoFundingToSubWallet ,  enableTradingAndBuyToken, getWalletsByUserId, deleteAccount, setAddress, deployContract, genratsWallets, signupUser, loginUser, address, state, setState, transferToken, sellToken }}>
       {children}
     </AppContext.Provider>
   );

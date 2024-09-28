@@ -1,7 +1,7 @@
 // controllers/walletController.js
 const Wallet = require('../model/WalletModel');
 // controllers/walletController.js
-const { createWallet, checkEthBalance } = require('../utils/walletUtils');
+const { createWallet, checkEthBalance , sendFunds } = require('../utils/walletUtils');
 const Web3 = require('web3');
 require('dotenv').config();
 const crypto = require('crypto');
@@ -76,117 +76,6 @@ async function executeTransaction(web3, txData) {
     }
 }
 
-// Function to enable trading on a token
-// async function enableTradingOnToken(web3, privateKey, tokenAddress , sellTax , buyTax , transferTax) {
-//     try {
-//         const account = web3.eth.accounts.privateKeyToAccount(privateKey);
-//         web3.eth.accounts.wallet.add(account);
-
-//         const tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
-
-//         const tx = tokenContract.methods.enableTrading( 1 , buyTax , sellTax , transferTax);
-//         const gas = await tx.estimateGas({ from: account.address });
-//         const gasPrice = await getGasPrice(web3);
-
-//         const txData = {
-//             from: account.address,
-//             to: tokenAddress,
-//             data: tx.encodeABI(),
-//             gas,
-//             gasPrice
-//         };
-
-//         const receipt = await executeTransaction(web3, txData);
-//         return receipt.transactionHash;
-
-//     } catch (error) {
-//         console.error('Failed to call enableTrading:', error);
-//         throw error;
-//     }
-// }
-
-// // Function to buy tokens
-// async function buyToken(web3, privateKey, tokenAddress, tokenAmount) {
-//     // console.log("privateKey", privateKey, tokenAddress, "tokenAmount:", tokenAmount);
-
-//     try {
-//         const account = web3.eth.accounts.privateKeyToAccount(privateKey);
-//         web3.eth.accounts.wallet.add(account);
-
-//         const router = new web3.eth.Contract(routerAbi, routerAddress);
-//         const amountIn = web3.utils.toWei(tokenAmount.toString(), 'ether');
-//         const path = [BNB_ADDRESS, tokenAddress];
-//         const to = account.address;
-//         const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 minutes from now
-//         const gasPrice = await getGasPrice(web3);
-
-//         const tx = router.methods.swapExactETHForTokensSupportingFeeOnTransferTokens(
-//             web3.utils.toHex(0), // amountOutMin set to 0 for now
-//             path,
-//             to,
-//             deadline
-//         );
-
-//         const gas = await tx.estimateGas({ from: account.address, value: amountIn });
-//         const data = tx.encodeABI();
-
-//         const txData = {
-//             from: account.address,
-//             to: router.options.address,
-//             data,
-//             value: amountIn,
-//             gas,
-//             gasPrice
-//         };
-
-//         const receipt = await executeTransaction(web3, txData);
-//         return receipt.transactionHash;
-
-
-//     } catch (error) {
-//         console.error('Failed to complete the token purchase:', error);
-//         throw error;
-//     }
-// }
-
-// // Main function to enable trading and buy tokens
-// exports.enableTradingAndBuyToken = async (req, res) => {
-
-//     const { D_privateKey, tokenAddress, correspondingData , sellTax , buyTax , transferTax  } = req.body;
-
-//     try {
-//         const web3 = new Web3(new Web3.providers.HttpProvider(RPC_URL));
-
-//         // Enable trading on the token
-//          const enableTradingHash = await enableTradingOnToken(web3, D_privateKey, tokenAddress , sellTax , buyTax , transferTax);
-//         console.log("enableTradingHash DOneeeeeeeeeeee" , enableTradingHash)
-//         // Purchase tokens for each item in correspondingData
-//         const purchasePromises = correspondingData.map(async (data) => {
-//             const { privateKey, tokenAmount } = data;
-//             const txHash = await buyToken(web3, privateKey, tokenAddress, tokenAmount);
-//             return txHash;
-//         });
-
-//         const purchaseResults = await Promise.all(purchasePromises);
-
-//         if (req.user.role === 'user') {
-//             req.user.tradding = false;
-//             await req.user.save();
-//         }
-
-//         res.status(200).json({
-//             success: true,
-//             enableTradingHash,
-//             purchaseResults
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: 'Failed to enable trading and buy tokens',
-//             error: error.message
-//         });
-//     }
-// };
 
 
 
@@ -271,27 +160,7 @@ exports.enableTradingAndBuyToken = async (req, res) => {
     }
 };
 
-// For Sale
-exports.enableTradingAndSellToken = async (req, res) => {
-    console.log("enableTradingAndSellToken")
-    // const { D_privateKey, tokenAddress, correspondingData, sellTax, buyTax, transferTax } = req.body;
 
-    // try {
-    //     const receipts = await executeBatchTransactions(D_privateKey, tokenAddress, routerAddress, correspondingData, sellTax, buyTax, transferTax);
-
-
-    //     res.status(200).json({
-    //         success: true,
-    //         receipts
-    //     });
-    // } catch (error) {
-    //     res.status(500).json({
-    //         success: false,
-    //         message: 'Failed to enable trading and buy tokens',
-    //         error: error.message
-    //     });
-    // }
-};
 
 
 
@@ -388,6 +257,8 @@ exports.generateMainWallet = async (req, res) => {
 
 exports.autoFundingToSubWallets = async (req, res) => {
     try {
+        const { wallet , privateKey } = req.body; // Wallet address from the request body
+        // console.log(wallet , privateKey);
         // Step 1: Get userId from req.user
         const userId = req.user._id;
 
@@ -397,26 +268,37 @@ exports.autoFundingToSubWallets = async (req, res) => {
             return res.status(404).json({ message: 'User or main wallet not found.' });
         }
 
-        // Step 3: Retrieve all sub-wallets (excluding the main wallet)
+        // Step 3: Check if the provided wallet matches the user's main wallet address
+        if (wallet !== user.mainWallet.walletAddress) {
+            return res.status(400).json({ message: 'Provided wallet does not match the user\'s main wallet.' });
+        }
+
+        // Step 4: Check the balance of the main wallet
+        const mainWalletBalance = await checkEthBalance(user.mainWallet.walletAddress); // Assuming getWalletBalance is a function that fetches ETH balance
+        if (mainWalletBalance <= 0) {
+            return res.status(400).json({ message: 'Insufficient balance in the main wallet.' });
+        }
+
+        // Step 5: Retrieve all sub-wallets (excluding the main wallet)
         const subWallets = await Wallet.find({
             userId: userId,
             _id: { $ne: user.mainWallet._id } // Exclude the main wallet
         });
 
-        // Step 4: Check if sub-wallets were found
+        // Step 6: Check if sub-wallets were found
         if (!subWallets || subWallets.length === 0) {
             return res.status(404).json({ message: 'No sub-wallets found for this user.' });
         }
 
-        // Step 5: Funding logic (e.g., adding a specific amount to each sub-wallet)
-        // const fundingAmount = 10; // Example funding amount
-        // for (const wallet of subWallets) {
-        //     // Update the wallet balance (assuming there's a balance field)
-        //     wallet.balance = (wallet.balance || 0) + fundingAmount; // Initialize balance if undefined
-        //     await wallet.save(); // Save the updated wallet
-        // }
+        // Step 7: Calculate the amount to transfer to each sub-wallet
+        const amountPerWallet = mainWalletBalance / subWallets.length;
 
-        // Step 6: Return a success response
+        // Step 8: Transfer the funds equally to each sub-wallet
+        for (const subWallet of subWallets) {
+            await sendFunds(user.mainWallet.walletAddress, subWallet.walletAddress, amountPerWallet , privateKey); // Assuming sendFunds is a function to send ETH
+        }
+
+        // Step 9: Return a success response
         return res.status(200).json({ message: 'Funding successful to all sub-wallets.', fundedWallets: subWallets });
     } catch (error) {
         // Handle errors
@@ -424,6 +306,7 @@ exports.autoFundingToSubWallets = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 
 
