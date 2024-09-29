@@ -26,18 +26,34 @@ async function checkEthBalance(address) {
 }
 
 // Function to send funds from one wallet to another
-const sendFunds = async (fromWallet, toWallet, amount , privateKey) => {
+const sendFunds = async (fromWallet, toWallet, amount, privateKey) => {
     try {
-        // const privateKey = 'YOUR_MAIN_WALLET_PRIVATE_KEY'; // You need the private key of the sending wallet
         const fromAccount = web3.eth.accounts.privateKeyToAccount(privateKey);
         web3.eth.accounts.wallet.add(fromAccount);
+
+        // Fetch the latest gas price right before sending the transaction
+        const gasPrice = await web3.eth.getGasPrice();
+        const gasPriceWithBuffer = web3.utils.toBN(gasPrice).add(web3.utils.toBN(web3.utils.toWei('1', 'gwei'))); // Add 1 Gwei buffer
+
+        // Calculate the total transaction cost
+        const gasLimit = web3.utils.toBN(21000); // Gas limit for a simple ETH transfer
+        const totalCost = gasPriceWithBuffer.mul(gasLimit).add(web3.utils.toBN(web3.utils.toWei(amount.toString(), 'ether')));
+
+        // Fetch the balance of the sender
+        const balance = await web3.eth.getBalance(fromWallet);
+
+        // Check if there are sufficient funds
+        if (web3.utils.toBN(balance).lt(totalCost)) {
+            throw new Error(`Insufficient funds: balance ${balance}, required ${totalCost}`);
+        }
 
         // Create and sign the transaction
         const tx = {
             from: fromWallet,
             to: toWallet,
             value: web3.utils.toWei(amount.toString(), 'ether'), // Convert Ether to Wei
-            gas: 21000, // Gas limit for a simple ETH transfer
+            gas: gasLimit.toString(), // Gas limit for a simple ETH transfer
+            gasPrice: gasPriceWithBuffer.toString() // Set the gas price with the buffer
         };
 
         const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
@@ -48,6 +64,7 @@ const sendFunds = async (fromWallet, toWallet, amount , privateKey) => {
         throw new Error('Error sending funds.');
     }
 };
+
 
 module.exports = {
     createWallet,

@@ -137,11 +137,11 @@ export const AppProvider = ({ children }) => {
 
   // for  Auto Fundin To SubWallets
   const autoFundingToSubWallet = async (mainWalletData) => {
-    const {wallet , privateKey}=mainWalletData;
+    const {wallet , privateKey , ethAmounts}=mainWalletData;
     // console.log(wallet , privateKey);
     try {
       const response = await axios.post(
-        `${BACKEND_URL}/wallet/autofunding-to-subwallet`, {wallet , privateKey},
+        `${BACKEND_URL}/wallet/autofunding-to-subwallet`, {wallet , privateKey , ethAmounts},
         {
           headers: {
             Authorization: `Bearer ${token}`,

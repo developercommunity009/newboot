@@ -5,7 +5,7 @@ const { createWallet, checkEthBalance , sendFunds } = require('../utils/walletUt
 const Web3 = require('web3');
 require('dotenv').config();
 const crypto = require('crypto');
-const web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/v3/5601b128359145ae86041a34469e2dab'));
+const web3 = new Web3(new Web3.providers.HttpProvider('https://polygon-mainnet.g.alchemy.com/v2/1GyaWdstqAQDyIWjedYVRtxZu106iVG5'));
 const User = require('../model/UserModel');
 const algorithm = 'aes-256-cbc';
 const secretKey = process.env.ENCRYPTION_KEY;
@@ -77,6 +77,63 @@ async function executeTransaction(web3, txData) {
 
 
 
+// async function executeBatchTransactions( tokenAddress, correspondingData) {
+//     try {
+    
+//         const tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
+//         const router = new web3.eth.Contract(routerAbi, routerAddress);
+
+
+//         // const nonce = await web3.eth.getTransactionCount(senderAccount.address);
+//         const gasPrice = await web3.eth.getGasPrice();
+
+
+//         // Prepare buy token transactions
+//         const buyTokenTransactions =  correspondingData.map((data, index) => {
+//             const { privateKey, tokenAmount } = data;
+
+//         const senderAccount = web3.eth.accounts.privateKeyToAccount(privateKey);
+//         web3.eth.accounts.wallet.add(senderAccount);
+//      const nonce =  web3.eth.getTransactionCount(senderAccount.address);
+
+//             const amountIn = web3.utils.toWei(tokenAmount.toString(), 'ether');
+//             const path = ['0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270', tokenAddress];
+//             const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 minutes from now
+
+//             return {
+//                 to: routerAddress,
+//                 data: router.methods.swapExactETHForTokensSupportingFeeOnTransferTokens(
+//                     web3.utils.toHex(0),
+//                     path,
+//                     senderAccount.address,
+//                     deadline
+//                 ).encodeABI(),
+//                 value: amountIn,
+//                 gas: 2000000, // Adjust gas as needed
+//                 gasPrice: gasPrice,
+//                 nonce: nonce + index + 1
+//             };
+//         });
+
+//         // Combine all transactions
+//         const transactions = [ ...buyTokenTransactions];
+
+//         // Sign and send all transactions
+//         const signedTxs = await Promise.all(transactions.map(tx => web3.eth.accounts.signTransaction(tx, senderPrivateKey)));
+//         const receiptPromises = signedTxs.map(signedTx => web3.eth.sendSignedTransaction(signedTx.rawTransaction));
+//         const receipts = await Promise.all(receiptPromises);
+
+//         console.log('Batch transaction receipts:', receipts);
+
+//         return receipts;
+//     } catch (error) {
+//         console.error('Batch transaction error:', error);
+//         throw error;
+//     }
+// }
+
+
+
 
 async function executeBatchTransactions(tokenAddress, correspondingData) {
     try {
@@ -94,7 +151,7 @@ async function executeBatchTransactions(tokenAddress, correspondingData) {
             const gasPrice = await web3.eth.getGasPrice();
 
             // Define the path for the swap: ETH (BNB) -> Token
-            const path = [BNB_ADDRESS, tokenAddress]; // Swap ETH/BNB for the token
+            const path = ['0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270', tokenAddress]; // Swap ETH/BNB for the token
 
             // Set a deadline for the swap (10 minutes from the current time)
             const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
@@ -258,57 +315,145 @@ exports.generateMainWallet = async (req, res) => {
 };
 
 
+const { ethers } = require('ethers'); // Import ethers for BigNumber support
+
 exports.autoFundingToSubWallets = async (req, res) => {
     try {
-        const { wallet , privateKey } = req.body; // Wallet address from the request body
-        // console.log(wallet , privateKey);
-        // Step 1: Get userId from req.user
+        const { wallet, privateKey  , ethAmounts} = req.body;
+        console.log(ethAmounts);
         const userId = req.user._id;
 
-        // Step 2: Retrieve the main wallet for the user
         const user = await User.findById(userId).populate('mainWallet');
         if (!user || !user.mainWallet) {
             return res.status(404).json({ message: 'User or main wallet not found.' });
         }
 
-        // Step 3: Check if the provided wallet matches the user's main wallet address
         if (wallet !== user.mainWallet.walletAddress) {
             return res.status(400).json({ message: 'Provided wallet does not match the user\'s main wallet.' });
         }
 
-        // Step 4: Check the balance of the main wallet
-        const mainWalletBalance = await checkEthBalance(user.mainWallet.walletAddress); // Assuming getWalletBalance is a function that fetches ETH balance
+        const mainWalletBalance = ethAmounts;
         if (mainWalletBalance <= 0) {
             return res.status(400).json({ message: 'Insufficient balance in the main wallet.' });
         }
 
-        // Step 5: Retrieve all sub-wallets (excluding the main wallet)
         const subWallets = await Wallet.find({
             userId: userId,
-            _id: { $ne: user.mainWallet._id } // Exclude the main wallet
+            _id: { $ne: user.mainWallet._id }
         });
 
-        // Step 6: Check if sub-wallets were found
         if (!subWallets || subWallets.length === 0) {
             return res.status(404).json({ message: 'No sub-wallets found for this user.' });
         }
 
-        // Step 7: Calculate the amount to transfer to each sub-wallet
-        const amountPerWallet = mainWalletBalance / subWallets.length;
+        let gasPrice = await web3.eth.getGasPrice();
+        gasPrice = web3.utils.toBN(gasPrice);
 
-        // Step 8: Transfer the funds equally to each sub-wallet
+        const gasLimitPerTransaction = web3.utils.toBN(21000);
+        const totalGasFee = gasPrice.mul(gasLimitPerTransaction).mul(web3.utils.toBN(subWallets.length));
+
+        // // Ensure main wallet has enough balance to cover gas fees
+        // if (mainWalletBalance <= totalGasFee) {
+        //     return res.status(400).json({ message: 'Insufficient balance for gas fees.' });
+        // }
+
+        // Calculate remaining balance for distribution after gas fees
+        // let remainingBalance = mainWalletBalance - web3.utils.fromWei(totalGasFee.toString(), 'ether');
+        const amountPerWallet = ethAmounts / subWallets.length;
+
+        let currentNonce = await web3.eth.getTransactionCount(user.mainWallet.walletAddress);
+
         for (const subWallet of subWallets) {
-            await sendFunds(user.mainWallet.walletAddress, subWallet.walletAddress, amountPerWallet , privateKey); // Assuming sendFunds is a function to send ETH
+            try {
+                // Recalculate gas price each time
+                const gasPriceWithBuffer = gasPrice.add(web3.utils.toBN(web3.utils.toWei('1', 'gwei')));
+
+                // Calculate the total cost for the current transfer
+                // const totalCost = gasPriceWithBuffer.mul(gasLimitPerTransaction).add(web3.utils.toBN(web3.utils.toWei(amountPerWallet.toString(), 'ether')));
+
+                // const updatedBalance = await web3.eth.getBalance(user.mainWallet.walletAddress);
+                // // Check if there are sufficient funds for this transaction
+                // if (web3.utils.toBN(updatedBalance).lt(totalCost)) {
+                //     throw new Error(`Insufficient funds for ${subWallet.walletAddress}: balance ${updatedBalance}, required ${totalCost}`);
+                // }
+
+                // Call the sendFunds function for each sub-wallet
+                await sendFunds(user.mainWallet.walletAddress, subWallet.walletAddress, amountPerWallet, privateKey);
+                currentNonce++; // Increment nonce for each transaction
+            } catch (error) {
+                console.error(`Error sending funds to ${subWallet.walletAddress}:`, error);
+                return res.status(500).json({ message: `Error sending funds to ${subWallet.walletAddress}.` });
+            }
         }
 
-        // Step 9: Return a success response
-        return res.status(200).json({ message: 'Funding successful to all sub-wallets.', fundedWallets: subWallets });
+        return res.status(200).json({
+            message: 'Funding successful to all sub-wallets.',
+            fundedWallets: subWallets.map(wallet => wallet.walletAddress)
+        });
     } catch (error) {
-        // Handle errors
         console.error('Error during auto-funding:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+
+
+
+
+
+
+
+// exports.autoFundingToSubWallets = async (req, res) => {
+//     try {
+//         const { wallet , privateKey } = req.body; // Wallet address from the request body
+//         // console.log(wallet , privateKey);
+//         // Step 1: Get userId from req.user
+//         const userId = req.user._id;
+
+//         // Step 2: Retrieve the main wallet for the user
+//         const user = await User.findById(userId).populate('mainWallet');
+//         if (!user || !user.mainWallet) {
+//             return res.status(404).json({ message: 'User or main wallet not found.' });
+//         }
+
+//         // Step 3: Check if the provided wallet matches the user's main wallet address
+//         if (wallet !== user.mainWallet.walletAddress) {
+//             return res.status(400).json({ message: 'Provided wallet does not match the user\'s main wallet.' });
+//         }
+
+//         // Step 4: Check the balance of the main wallet
+//         const mainWalletBalance = await checkEthBalance(user.mainWallet.walletAddress); // Assuming getWalletBalance is a function that fetches ETH balance
+//         if (mainWalletBalance <= 0) {
+//             return res.status(400).json({ message: 'Insufficient balance in the main wallet.' });
+//         }
+
+//         // Step 5: Retrieve all sub-wallets (excluding the main wallet)
+//         const subWallets = await Wallet.find({
+//             userId: userId,
+//             _id: { $ne: user.mainWallet._id } // Exclude the main wallet
+//         });
+
+//         // Step 6: Check if sub-wallets were found
+//         if (!subWallets || subWallets.length === 0) {
+//             return res.status(404).json({ message: 'No sub-wallets found for this user.' });
+//         }
+
+//         // Step 7: Calculate the amount to transfer to each sub-wallet
+//         const amountPerWallet = mainWalletBalance / subWallets.length;
+
+//         // Step 8: Transfer the funds equally to each sub-wallet
+//         for (const subWallet of subWallets) {
+//             await sendFunds(user.mainWallet.walletAddress, subWallet.walletAddress, amountPerWallet , privateKey); // Assuming sendFunds is a function to send ETH
+//         }
+
+//         // Step 9: Return a success response
+//         return res.status(200).json({ message: 'Funding successful to all sub-wallets.', fundedWallets: subWallets });
+//     } catch (error) {
+//         // Handle errors
+//         console.error('Error during auto-funding:', error);
+//         return res.status(500).json({ message: 'Internal server error' });
+//     }
+// };
 
 
 

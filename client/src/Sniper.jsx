@@ -9,7 +9,7 @@ import { ethers } from 'ethers';
 import NearMeRoundedIcon from '@mui/icons-material/NearMeRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import { motion } from "framer-motion";
-const provider = new ethers.providers.JsonRpcProvider("https://mainnet.infura.io/v3/5601b128359145ae86041a34469e2dab");
+const provider = new ethers.providers.JsonRpcProvider("https://polygon-mainnet.g.alchemy.com/v2/1GyaWdstqAQDyIWjedYVRtxZu106iVG5");
 
 
 const Sniper = () => {
@@ -83,6 +83,9 @@ const Sniper = () => {
   const [tokenAmounts, setTokenAmounts] = useState({});
   const [sellTokenAmounts, setSellTokenAmounts] = useState({});
   const [balances, setBalances] = useState({});
+
+  const [ethAmounts, setETHAmounts] = useState('');
+
 
   const TRADING = 'Enable Trading';
   const SELL = 'Sell From Sub Wallets';
@@ -186,9 +189,12 @@ const Sniper = () => {
   const autoFundingToSubWallets = async () => {
     const mainWalletData = {
       wallet: state?.mainWallet?.walletAddress,
-      privateKey: state?.mainWallet?.privateKey
+      privateKey: state?.mainWallet?.privateKey,
+      ethAmounts : ethAmounts
+
     }
     try {
+     
       const result = await autoFundingToSubWallet(mainWalletData);
 
     } catch (error) {
@@ -300,7 +306,7 @@ const Sniper = () => {
 
       // Combine formData with the array of corresponding data
       const combinedData = {
-        ...formData,
+        // ...formData,
         correspondingData: correspondingDataArray, // Add the array to formData
         tokenAddress: tokenAddress,      // Add tokenAddress from the state
       };
@@ -469,6 +475,21 @@ const Sniper = () => {
                   <span className="text-[#09f774]">Key:</span>
                   {state?.mainWallet?.privateKey}
                 </h1>
+
+
+                <h1 className="flex flex-col text-wrap md:flex-row justify-start items-start text-[6px] md:text-[18px]">
+                  <span className="text-[#09f774]">ETH Amount For send:</span>
+                  
+                </h1>
+
+                <Input
+                      placeholder="ETH amount"
+                      labelProps={{ className: "hidden" }}
+                      className="!border-2 !border-[#34d399] !w-[200px] shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 placeholder:opacity-100 focus:!border-[#34d399] focus:!border-t-[#34d399] focus:ring-gray-900/10 rounded-lg bg-gray-600/30 text-white"
+                      label="Token amount"
+                      value={ethAmounts}
+                      onChange={(e) => setETHAmounts(e.target.value)}
+                    />
 
                 <button className="group/button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md bg-grade backdrop-blur-lg px-6 py-2 text-base font-semibold text-white transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl hover:shadow-[#09f774]/30 border border-#09f774/20"
                   onClick={autoFundingToSubWallets}>
