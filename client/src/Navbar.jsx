@@ -26,7 +26,7 @@ const NavBar = () => {
 
   return (
     <nav className="flex bg-[#292929] px-8 md:px-16 py-4 justify-between items-center top-0 left-0 right-0 z-20">
-      <div className="flex justify-center items-center gap-3">
+      <div className="flex justify-center items-center gap-3"  onClick={() => navigate("/sniper")}>
         <img
           className="object-cover rounded-full max-w-12 max-h-12"
           src={logo}

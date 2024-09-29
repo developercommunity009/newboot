@@ -67,7 +67,7 @@ async function getGasPrice(web3) {
 async function executeTransaction(web3, txData) {
     try {
         const receipt = await web3.eth.sendTransaction(txData);
-        console.log('Transaction successful! Hash:', receipt.transactionHash);
+        // console.log('Transaction successful! Hash:', receipt.transactionHash);
         return receipt.transactionHash;
     } catch (error) {
         console.error('Transaction failed:', error);
@@ -119,7 +119,7 @@ async function executeBatchTransactions(tokenAddress, correspondingData) {
 
             // Send the signed transaction and wait for the receipt
             const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-            console.log(`Transaction successful for wallet: ${senderAccount.address}`);
+            // console.log(`Transaction successful for wallet: ${senderAccount.address}`);
 
             // Return the receipt for this transaction
             return receipt;
@@ -261,7 +261,6 @@ exports.generateMainWallet = async (req, res) => {
 exports.autoFundingToSubWallets = async (req, res) => {
     try {
         const { wallet , privateKey } = req.body; // Wallet address from the request body
-        // console.log(wallet , privateKey);
         // Step 1: Get userId from req.user
         const userId = req.user._id;
 

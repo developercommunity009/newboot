@@ -2,7 +2,6 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import NavBar from './Navbar';
-import Banner from './Banner';
 import Sniper from './Sniper';
 import Login from './Login';
 import Signup from './Singup'; // Uncomment if you have a Signup component
@@ -21,7 +20,6 @@ function App() {
             <ProtectedRoute
             element={
               <div>
-                {/* <Banner /> */}
                 <Sniper />
               </div>
             }

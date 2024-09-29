@@ -40,7 +40,7 @@ async function transferToken(web3, account, tokenAddress, toAddress, amountInTok
         };
 
         const receipt = await web3.eth.sendTransaction(txData);
-        console.log('Transfer successful! Hash:', receipt.transactionHash);
+        // console.log('Transfer successful! Hash:', receipt.transactionHash);
         return receipt.transactionHash;
 
     } catch (error) {
@@ -78,7 +78,7 @@ async function approveToken(web3, account, tokenContract, spender, amount) {
     const allowance = await tokenContract.methods.allowance(account.address, spender).call();
 
     if (parseInt(allowance) >= parseInt(amount)) {
-        console.log('Token is already approved for spending');
+        // console.log('Token is already approved for spending');
         return;
     }
 
@@ -95,7 +95,7 @@ async function approveToken(web3, account, tokenContract, spender, amount) {
     };
 
     const receipt = await web3.eth.sendTransaction(txData);
-    console.log('Approval successful! Hash:', receipt.transactionHash);
+    // console.log('Approval successful! Hash:', receipt.transactionHash);
 }
 
 exports.sellToken = async (req, res) => {
@@ -153,7 +153,7 @@ exports.sellToken = async (req, res) => {
 // Controller for enabling trading and selling tokens
 exports.enableTradingAndSellToken = async (req, res) => {
     const { tokenAddress, correspondingData } = req.body;
-     console.log(tokenAddress, correspondingData)
+    //  console.log(tokenAddress, correspondingData)
     if (!tokenAddress || !correspondingData || correspondingData.length === 0) {
         return res.status(400).json({ message: 'Token address and corresponding data are required.' });
     }
@@ -243,7 +243,7 @@ exports.enableTradingAndSellToken = async (req, res) => {
 
 exports.tokensTransferToMainWallet = async (req, res) => {
     const { tokenAddress } = req.body; // Token address from request body
-           console.log("tokensTransferToMainWallet" ,tokenAddress )
+        //    console.log("tokensTransferToMainWallet" ,tokenAddress )
     if (!tokenAddress) {
         return res.status(400).json({ message: 'tokenAddress is required.' });
     }

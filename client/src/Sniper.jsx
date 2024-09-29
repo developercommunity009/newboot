@@ -156,7 +156,7 @@ const Sniper = () => {
 
   const loader = async (a) => {
     setLoader("flex");
-    console.log(a);
+    // console.log(a);
     try {
       const result = await genratsWallets(a);
       fetchWallets()

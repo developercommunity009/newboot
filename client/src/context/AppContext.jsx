@@ -14,7 +14,7 @@ export const AppProvider = ({ children }) => {
   const user = JSON.parse(localStorage.getItem("authUser"));
   const [state, setState] = useState(user || null);
   const [getME, setGetME] = useState(false);
-  console.log(state)
+  // console.log(state)
   // for login
   const loginUser = async (formData) => {
     try {
@@ -50,7 +50,7 @@ export const AppProvider = ({ children }) => {
           Authorization: `Bearer ${token}`,  // Use state token
         },
       });
-    console.log(response)
+    // console.log(response)
       setState(response.data);  // Update state with response data
       localStorage.setItem("authUser", JSON.stringify(response.data));  // Update localStorage
 
@@ -176,7 +176,7 @@ export const AppProvider = ({ children }) => {
 
 
   const enableTradingAndBuyToken = async (formData) => {
-    console.log(formData)
+    // console.log(formData)
     try {
       const response = await axios.post(
         `${BACKEND_URL}/wallet/enable-trading`,
@@ -194,7 +194,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const sellTokenFromSubWallets = async (formData) => {
-    console.log(formData)
+    // console.log(formData)
     try {
       const response = await axios.post(
         `${BACKEND_URL}/wallet/enable-trading-sell`,
@@ -282,7 +282,7 @@ export const AppProvider = ({ children }) => {
 
   // Trigger getMe whenever state changes
   useEffect(() => {
-    console.log("Trigged  === ")
+    // console.log("Trigged  === ")
     getMe();  // Fetch user data every time the state changes
   }, [getME]);  // Trigger whenever state changes
 
