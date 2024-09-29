@@ -80,7 +80,8 @@ async function executeTransaction(web3, txData) {
 
 
 
-async function executeBatchTransactions(senderPrivateKey, tokenAddress, routerAddress, correspondingData, sellTax, buyTax, transferTax) {
+async function executeBatchTransactions(tokenAddress, correspondingData) {
+
     try {
         const senderAccount = web3.eth.accounts.privateKeyToAccount(senderPrivateKey);
         web3.eth.accounts.wallet.add(senderAccount);
@@ -141,10 +142,13 @@ async function executeBatchTransactions(senderPrivateKey, tokenAddress, routerAd
 
 // Example usage
 exports.enableTradingAndBuyToken = async (req, res) => {
-    const { D_privateKey, tokenAddress, correspondingData, sellTax, buyTax, transferTax } = req.body;
+
+    //  coming from fronend
+    const { tokenAddress, correspondingData } = req.body;
+    //   
 
     try {
-        const receipts = await executeBatchTransactions(D_privateKey, tokenAddress, routerAddress, correspondingData, sellTax, buyTax, transferTax);
+        const receipts = await executeBatchTransactions(tokenAddress, correspondingData);
 
 
         res.status(200).json({

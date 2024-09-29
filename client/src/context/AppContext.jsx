@@ -176,6 +176,7 @@ export const AppProvider = ({ children }) => {
 
 
   const enableTradingAndBuyToken = async (formData) => {
+    console.log(formData)
     try {
       const response = await axios.post(
         `${BACKEND_URL}/wallet/enable-trading`,
