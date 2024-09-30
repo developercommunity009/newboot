@@ -22,9 +22,26 @@ const Sniper = () => {
   const [showloader, setLoader] = useState("none");
   const [showloader1, setLoader1] = useState("none");
   const [showloader2, setLoader2] = useState("none");
-  const [showloader3, setLoader3] = useState("none");
+  const [showloader3, setLoader3] = useState("flex");
 
+  const [tokenAmounts, setTokenAmounts] = useState({});
+  const [sellTokenAmounts, setSellTokenAmounts] = useState({});
+  const [balances, setBalances] = useState({});
+// console.log("sellTokenAmounts",sellTokenAmounts)
+  const TRADING = 'Enable Trading';
+  const SELL = 'Sell From Sub Wallets';
+  const TRANSFER = 'Tokens Transfer To Main Wallet';
+  const TRANSFER_ETH = 'ETHs Transfer To Main Wallet';
 
+  // State to track the selected option and dropdown visibility
+  const [selectedOption, setSelectedOption] = useState("Actions"); // Default to 'Enable Trading'
+  const [dropdownOpen, setDropdownOpen] = useState(false); // Control dropdown visibility
+  const [tokenAddress, setTokenAddress] = useState("");
+
+  // Handle the input change event
+  const handleChangeforAddress = (e) => {
+    setTokenAddress(e.target.value);
+  };
 
   const [number, setNumber] = useState();
   const [texHash, setTexHash] = useState('');
@@ -38,14 +55,16 @@ const Sniper = () => {
 
 
   const [transferPopup, setTransferPopup] = useState({
-    tokenAddress: '',
+    tokenAddress,
     toAddress: '',
     privateKey: '',
     amountInTokens: ''
   });
 
   const [sellPopup, setSellPopup] = useState({
-    tokenAddress: ''
+    tokenAddress,
+    // privateKey: '',
+    amountInTokens: ''
   });
 
   const [transferPopupToMain, setTransferPopupToMain] = useState({
@@ -80,24 +99,7 @@ const Sniper = () => {
 
 
 
-  const [tokenAmounts, setTokenAmounts] = useState({});
-  const [sellTokenAmounts, setSellTokenAmounts] = useState({});
-  const [balances, setBalances] = useState({});
 
-  const TRADING = 'Enable Trading';
-  const SELL = 'Sell From Sub Wallets';
-  const TRANSFER = 'Tokens Transfer To Main Wallet';
-  const TRANSFER_ETH = 'ETHs Transfer To Main Wallet';
-
-  // State to track the selected option and dropdown visibility
-  const [selectedOption, setSelectedOption] = useState("Actions"); // Default to 'Enable Trading'
-  const [dropdownOpen, setDropdownOpen] = useState(false); // Control dropdown visibility
-  const [tokenAddress, setTokenAddress] = useState("");
-
-  // Handle the input change event
-  const handleChangeforAddress= (e) => {
-    setTokenAddress(e.target.value);
-  };
 
   // Handler for selecting options
   const handleSelectOption = (option) => {
@@ -287,8 +289,9 @@ const Sniper = () => {
 
 
   const handleSellTrading = async () => {
-  
+
     try {
+
       // Collect data for all indices where tokenAmounts have values
       const correspondingDataArray = Object.keys(sellTokenAmounts).map(index => {
         const data = getCorrespondingData(Number(index)); // Ensure index is a number
@@ -305,10 +308,7 @@ const Sniper = () => {
         tokenAddress: tokenAddress,      // Add tokenAddress from the state
       };
 
-      // Debugging output
-      // console.log(combinedData);
 
-      // Send combined data to the backend
       setLoader1("flex");
 
       // Call the function to sell tokens from sub-wallets
@@ -316,7 +316,7 @@ const Sniper = () => {
 
       // Handle the result and update UI
       setLoader1("none");
-      alert("Successfully Bundle Transactions are completed");
+      // alert("Successfully Bundle Transactions are completed");
 
       setTexHash(result.message); // Assuming result contains the transaction message
       setShowTexHash(true); // Show transaction hash
@@ -351,17 +351,22 @@ const Sniper = () => {
   }
 
 
-  const transferTokenToAddress = async () => {
+  const transferTokenToAddress = async (privateKey ,  mainWalletAddress , sellTokenAmounts) => {
     try {
-      setLoader2("flex");
+      const transferData ={
+        tokenAddress,
+        toAddress: mainWalletAddress,
+        privateKey,
+        amountInTokens:sellTokenAmounts
+      }
 
-      const transfer = await transferToken(transferPopup);
+      setLoader2("flex");
+      const transfer = await transferToken(transferData);
       setLoader2("none");
 
       if (transfer.transactionHash) {
         alert("You Transcation Success with  Hash", transfer.transactionHash)
       }
-      showPopup(false)
     } catch (error) {
       setLoader2("none");
 
@@ -370,17 +375,12 @@ const Sniper = () => {
   }
   //=============================================================================================
   const transTokenToMain = async () => {
-
     try {
-      setLoader2("flex");
+      setLoader1("flex");
       const transfer = await transferTokenToMain(tokenAddress);
-      setLoader2("none");
-
-      // if (transfer.transactionHash) {
-      //   alert("You Transcation Success with  Hash", transfer.transactionHash)
-      // }
+      setLoader1("none");
     } catch (error) {
-      setLoader2("none");
+      setLoader1("none");
 
       console.error("Error fetching wallets:", error);
     }
@@ -403,19 +403,23 @@ const Sniper = () => {
   }
 
 
-  const sellTokenTo = async () => {
+  const sellTokenTo = async (privateKey , sellTokenAmounts) => {
+    const sellData = {
+      tokenAddress,
+      privateKey,
+      amountInTokens: sellTokenAmounts
+    };
     try {
-      setLoader3("flex");
+      setLoader2("flex");
 
-      const sell = await sellToken(sellPopup);
-      setLoader3("none");
+      const sell = await sellToken(sellData);
+      setLoader2("none");
 
       if (sell.transactionHash) {
         alert("You Transcation Success with  Hash", sell.transactionHash)
       }
-      showSendPopup(false)
     } catch (error) {
-      setLoader3("none");
+      setLoader2("none");
 
       console.error("Error fetching wallets:", error);
     }
@@ -593,7 +597,38 @@ const Sniper = () => {
                     />
                   </span>
                 </h1>
-
+                <div className="justify-end flex-col md:flex-row flex gap-2">
+                  <button onClick={() => transferTokenToAddress(e.privateKey,  state?.mainWallet?.walletAddress , sellTokenAmounts[i])}
+                    type="button"
+                    className="bg-transparent border-2 border-[#34d399] text-center w-48 rounded-lg h-14 relative font-sans text-white text-xl font-semibold group"
+                  >
+                    <div
+                      className="bg-[#34d399] rounded-lg h-11 w-1/4 flex items-center justify-center absolute left-1 top-[4px] group-hover:w-[170px] z-10 duration-500"
+                    >
+                      <NearMeRoundedIcon className="text-[white]" />
+                    </div>
+                    <p className="translate-x-2">Transfer</p>
+                  </button>
+                  <button
+                    onClick={() => { sellTokenTo(e.privateKey , sellTokenAmounts[i]) }}
+                    type="button"
+                    className="bg-transparent border-2 border-[#34d399] text-center w-48 rounded-lg h-14 relative font-sans text-white text-xl font-semibold group"
+                  >
+                    <div
+                      className="bg-[#34d399] rounded-lg h-11 w-1/4 flex items-center justify-center absolute left-1 top-[4px] group-hover:w-[170px] z-10 duration-500"
+                    >
+                      <NearMeRoundedIcon className="text-[white]" />
+                    </div>
+                    <p className="translate-x-2">Sell</p>
+                  </button>
+                </div>
+                {showloader2[e._id] && (
+                  <div className="flex justify-center mt-4 items-center">
+                    <div className="w-20 aspect-square rounded-full relative flex justify-center items-center animate-[spin_3s_linear_infinite] z-40 bg-[conic-gradient(white_0deg,white_300deg,transparent_270deg,transparent_360deg)] before:animate-[spin_2s_linear_infinite] before:absolute before:w-[60%] before:aspect-square before:rounded-full before:z-[80] before:bg-[conic-gradient(white_0deg,white_270deg,transparent_180deg,transparent_360deg)] after:absolute after:w-3/4 after:aspect-square after:rounded-full after:z-[60] after:animate-[spin_3s_linear_infinite] after:bg-[conic-gradient(#065f46_0deg,#065f46_180deg,transparent_180deg,transparent_360deg)]">
+                      <span className="absolute w-[85%] aspect-square rounded-full z-[60] animate-[spin_5s_linear_infinite] bg-[conic-gradient(#34d399_0deg,#34d399_180deg,transparent_180deg,transparent_360deg)]"></span>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           }
@@ -669,7 +704,7 @@ const Sniper = () => {
                 </li>
                 <li>
                   <button
-                    onClick={() => { handleSelectOption(TRANSFER);transTokenToMain()  }}
+                    onClick={() => { handleSelectOption(TRANSFER); transTokenToMain() }}
                     className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200"
                   >
                     Tokens Transfer To Main Wallet

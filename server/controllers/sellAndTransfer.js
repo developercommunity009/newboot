@@ -52,7 +52,7 @@ async function transferToken(web3, account, tokenAddress, toAddress, amountInTok
 exports.transferToken = async (req, res) => {
     
     const { privateKey, tokenAddress, toAddress, amountInTokens } = req.body;
-    // console.log(privateKey, tokenAddress, toAddress, amountInTokens)
+    // console.log("transferToken",privateKey, tokenAddress, toAddress, amountInTokens)
 
     try {
         const web3 = new Web3(new Web3.providers.HttpProvider(RPC_URL));
@@ -101,6 +101,7 @@ async function approveToken(web3, account, tokenContract, spender, amount) {
 exports.sellToken = async (req, res) => {
     
     const { privateKey, tokenAddress, amountInTokens } = req.body;
+    // console.log("sellToken",privateKey, tokenAddress, amountInTokens)
     try {
         const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
         const account = web3.eth.accounts.privateKeyToAccount(privateKey);

@@ -213,6 +213,7 @@ export const AppProvider = ({ children }) => {
 
 
   const transferToken = async (formData) => {
+    // console.log(formData)
     try {
       const response = await axios.post(
         `${BACKEND_URL}/wallet/transfer-token`,
@@ -264,6 +265,7 @@ export const AppProvider = ({ children }) => {
 
 
   const sellToken = async (formData) => {
+    // console.log(formData)
     try {
       const response = await axios.post(
         `${BACKEND_URL}/wallet/sell-token`,
