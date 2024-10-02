@@ -32,7 +32,7 @@ const NavBar = () => {
           src={logo}
           alt="Logo"
         />
-        <h1 className="text-[#34d399] md:text-[26px] text-[18px]">Harley’s service</h1>
+        <h1 className="text-[#34d399] md:text-[26px] text-[18px]">Bot service</h1>
       </div>
 
       <button className="p-2 hidden" onClick={handleMenu}>
